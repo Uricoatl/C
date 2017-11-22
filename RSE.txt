@@ -1,0 +1,202 @@
+Building 1
+
+Hostname Building-1
+No ip domain-lookup
+Enable secret cisco
+Line con 0
+Logging synchronous
+Password cisco
+Login
+exit
+Line vty 0 4
+Password cisco
+Login
+exit
+Service password-encryption
+Banner motd #hahaha#
+Int s0/0/0
+Ip add 192.168.10.105 255.255.255.252
+No sh
+Description To_Main_Router
+Clock rate 128000
+Exit
+Int g0/0.45
+Encapsulation dot1q 45
+Ip add 192.168.45.1 255.255.255.0
+Int g0/0.47
+Encapsulation dot1q 47
+Ip add 192.168.47.1 255.255.255.0
+Int g0/0.101
+Encapsulation dot1q 101
+Ip add 192.168.101.1 255.255.255.0
+Int g0/0
+No shut
+Exit
+
+Ip route 0.0.0.0 0.0.0.0 s0/0/0
+Router ospf 10
+Router-id 1.1.1.1
+Network 192.168.10.104 0.0.0.3 area 0
+Network 192.168.45.0 0.0.0.255 area 0
+Network 192.168.47.0 0.0.0.255 area 0
+Network 192.168.101.0 0.0.0.255 area 0
+Passive-interface g0/0.45
+Passive-interface g0/0.47
+Passive-interface g0/0.101
+exit
+Int s0/0/0
+Bandwidth 128
+Ip ospf cost 7500
+exit
+Ip dhcp pool VLAN45
+Network 192.168.45.0 255.255.255.0
+Default-router 192.168.45.1
+Dns-server 192.168.18.100
+Exit
+Ip dhcp pool VLAN47
+Network 192.168.47.0 255.255.255.0
+Default-router 192.168.47.1
+Dns-server 192.168.18.100
+Exit
+Ip dhcp excluded-address 192.168.47.1 192.168.47.20
+Ip dhcp excluded-address 192.168.45.1 192.168.45.20
+
+
+
+
+
+
+HQ
+
+Hostname Main
+Int s0/0/0
+Ip add 192.168.10.106 255.255.255.252
+Bandwidth 128
+Ip ospf cost 7500
+No shut
+Int s0/0/1
+Ip add 192.168.10.113 255.255.255.252
+No shut
+Clock rate 128000
+Bandwidth 128
+Int s0/1/0
+Ip add 198.51.100.1 255.255.255.240
+Bandwidth 128
+No shut
+Int g0/0
+Ip add 192.168.18.41 255.255.255.248
+No shut
+exit
+Ip route 0.0.0.0 0.0.0.0 s0/1/0
+Ip route 192.168.200.0 255.255.252.0 s0/0/1
+Router ospf 10
+Router-id 2.2.2.2
+Network 192.168.10.104 0.0.0.3 area 0
+Network 192.168.10.112 0.0.0.3 area 0
+Network 192.168.18.40 0.0.0.7 area 0
+Passive-interface g0/0
+Int g0/0
+Ip nat inside
+Int s0/1/0
+Ip nat outside
+exit
+Ip nat pool INTERNET 198.51.100.3 198.51.100.13 netmask 255.255.255.240
+Ip nat inside source static 192.168.18.46 198.51.100.14
+Access-list standard 1
+Access-list 1 permit 192.168.45.0 0.0.0.255
+Access-list 1 permit 192.168.47.0 0.0.0.255
+Access-list 1 permit 192.168.200.0 0.0.3.255
+Ip nat inside source list 1 pool INTERNET
+Ip access-list standard MANAGE
+Permit host 203.0.113.18
+Exit
+Access-list 101 permit ip host 203.0.113.18 any
+Access-list 101 permit tcp any host 198.51.100.14 eq www
+Access-list 101 permit tcp any any established
+Access-list 101 deny ip any any
+Int s0/1/0
+Ip access-group 101 in
+Line vty 0 4
+access-class MANAGE in
+Password class
+Login
+exit
+Line vty 0 15
+access-class MANAGE in
+password cisco
+login
+Exit
+
+
+
+Site-2
+
+Hostname Building-2
+Int s0/0/0
+Bandwidth 128
+Ip add 192.168.10.126 255.255.255.252
+No shut
+Int s0/0/1
+Ip add 192.168.10.114 255.255.255.252
+Bandwidth 128
+No shut
+exit
+Ip route 192.168.200.0 255.255.252.0 s0/0/0
+Router ospf 10
+Router-id 3.3.3.3
+Network 192.168.10.112 0.0.0.3 area 0
+Ip route 0.0.0.0 0.0.0.0 s0/0/1
+Site1-SW1
+Hostname Bldg1-SW1
+Vlan 45
+Name records
+Vlan 47
+Name library
+Vlan 101
+Name manage
+Int range g0/1-2
+No shut
+Switchport mode trunk
+Int f0/10
+Switchport mode access
+Switchport access vlan 45
+No shut
+Int f0/15
+Switchport mode access
+Switchport access vlan 47
+No shut
+Int vlan 101
+Ip add 192.168.101.2 255.255.255.0
+Exit
+Ip default-gateway 192.168.101.1
+Int range f0/1-9, f0/11-14, f0/16-24
+Switchport mode access
+Shutdown
+
+Site1-SW2
+Hostname Bldg1-SW2
+Vlan 45
+Name records
+Vlan 47
+Name library
+Vlan 101
+Name manage
+Int g0/1
+No shut
+Switchport mode trunk
+Int f0/3
+Switchport mode access
+Switchport access vlan 45
+No shut
+Int f0/21
+Switchport mode access 
+Switchport  access vlan 47
+No shut
+Int vlan 101
+Ip add 192.168.101.3 255.255.255.0
+Exit
+Ip default-gateway 192.168.101.1
+Int range f0/1-2, f0/4-20, f0/22-24, g0/2
+Switchport mode access
+Shutdown
+
